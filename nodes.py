@@ -13,7 +13,7 @@ class TimmBackboneLoader:
                     "STRING",
                     {
                         "multiline": False,
-                        "default": "timm/vit_base_patch16_siglip_256.v2_webli",
+                        "default": "timm/vit_huge_patch14_clip_224.laion2b",
                     },
                 ),
             },
