@@ -1,4 +1,6 @@
 import torch
+import torchvision.transforms.v2.functional as F
+
 import timm
 
 import comfy.model_management
@@ -98,6 +100,52 @@ class TimmBackboneImageEncode:
             raise ValueError(f"Unknown feature type: {feature_type}")
 
 
+class ImageNormalize:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "image": ("IMAGE",),
+                "mean": (
+                    "STRING",
+                    {
+                        "multiline": False,
+                        "default": "0.5, 0.5, 0.5",
+                    },
+                ),
+                "std": (
+                    "STRING",
+                    {
+                        "multiline": False,
+                        "default": "0.5, 0.5, 0.5",
+                    },
+                ),
+            },
+        }
+
+    RETURN_TYPES = ("IMAGE",)
+    FUNCTION = "normalize"
+
+    CATEGORY = "image"
+
+    def str_to_float_list(self, s: str):
+        return [float(x) for x in s.split(",")]
+
+    def normalize(
+        self,
+        image: torch.Tensor,  # [b, h, w, c]
+        mean: str,
+        std: str,
+    ):
+        image = image.permute(0, 3, 1, 2)  # -> [b, c, h, w]
+        image = F.normalize(
+            image,
+            mean=self.str_to_float_list(mean),
+            std=self.str_to_float_list(std),
+        ).permute(0, 2, 3, 1)  # -> [b, h, w, c]
+        return (image,)
+
+
 class TimmEmbedsPrint:
     @classmethod
     def INPUT_TYPES(s):
@@ -115,3 +163,30 @@ class TimmEmbedsPrint:
     def print_embeds(self, embeds: torch.Tensor):
         print(f"{embeds.shape}: {embeds}")
         return ()
+
+
+class RGB2BGR:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "image": ("IMAGE",),
+            },
+        }
+
+    RETURN_TYPES = ("IMAGE",)
+    FUNCTION = "convert"
+
+    CATEGORY = "image"
+
+    def convert(
+        self,
+        image: torch.Tensor,  # [b, h, w, c]
+    ):
+        if image.shape[-1] != 3:
+            raise ValueError("Input image must have 3 channels (RGB).")
+
+        # Convert RGB to BGR by reversing the last dimension
+        image = image[..., ::-1]  # -> [b, h, w, c]
+
+        return (image,)
