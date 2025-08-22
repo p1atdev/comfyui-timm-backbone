@@ -187,6 +187,6 @@ class RGB2BGR:
             raise ValueError("Input image must have 3 channels (RGB).")
 
         # Convert RGB to BGR by reversing the last dimension
-        image = image[..., ::-1]  # -> [b, h, w, c]
+        image = torch.flip(image, dims=[-1])
 
         return (image,)
